@@ -1,10 +1,12 @@
 /*++
 
   Copyright (c) 2004  - 2014, Intel Corporation. All rights reserved.<BR>
-                                                                                   
+                                                                                   
+
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
-                                                                                   
+                                                                                   
+
 
 
 Module Name:
@@ -98,42 +100,6 @@ extern CHAR16   gUuidVariableName[];
 
 extern EFI_GUID gMb32Guid;
 extern CHAR16   gMb32VariableName[];
-
-//
-// ACPI OSFR Manufacturer String.
-//
-// {72234213-0FD7-48a1-A59F-B41BC107FBCD}
-//
-#define  ACPI_OSFR_MFG_STRING_VARIABLE_GUID \
-  {0x72234213, 0xfd7, 0x48a1, 0xa5, 0x9f, 0xb4, 0x1b, 0xc1, 0x7, 0xfb, 0xcd}
-#define ACPI_OSFR_MFG_STRING_VARIABLE_NAME (L"OcurMfg")
-#define ASCII_ACPI_OSFR_MF_STRING_VARIABLE_NAME ("OcurMfg")
-
-extern EFI_GUID gACPIOSFRMfgStringVariableGuid;
-
-
-//
-// ACPI OSFR Model String.
-//
-// {72234213-0FD7-48a1-A59F-B41BC107FBCD}
-//
-#define  ACPI_OSFR_MODEL_STRING_VARIABLE_GUID \
-  {0x72234213, 0xfd7, 0x48a1, 0xa5, 0x9f, 0xb4, 0x1b, 0xc1, 0x7, 0xfb, 0xcd}
-#define ACPI_OSFR_MODEL_STRING_VARIABLE_NAME (L"OcurModel")
-#define ASCII_ACPI_OSFR_MODEL_STRING_VARIABLE_NAME ("OcurModel")
-
-extern EFI_GUID gACPIOSFRModelStringVariableGuid;
-
-//
-// ACPI OSFR Reference Data Block.
-//
-// {72234213-0FD7-48a1-A59F-B41BC107FBCD}
-//
-#define  ACPI_OSFR_REF_DATA_BLOCK_VARIABLE_GUID \
-  {0x72234213, 0xfd7, 0x48a1, 0xa5, 0x9f, 0xb4, 0x1b, 0xc1, 0x7, 0xfb, 0xcd}
-#define ACPI_OSFR_REF_DATA_BLOCK_VARIABLE_NAME (L"OcurRef")
-#define ASCII_ACPI_OSFR_REF_DATA_BLOCK_VARIABLE_NAME ("OcurRef")
-extern EFI_GUID gACPIOSFRRefDataBlockVariableGuid;
 
 //
 // Manufacturing mode GUID

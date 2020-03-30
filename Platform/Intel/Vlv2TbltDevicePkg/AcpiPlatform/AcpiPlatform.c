@@ -30,7 +30,6 @@ Abstract:
 #include "Platform.h"
 #include <Hpet.h>
 #include <Mcfg.h>
-#include "Osfr.h"
 #include <Guid/GlobalVariable.h>
 #include <Guid/SetupVariable.h>
 #include <Guid/PlatformInfo.h>
@@ -46,9 +45,6 @@ Abstract:
 
 
 CHAR16    EfiPlatformCpuInfoVariable[] = L"PlatformCpuInfo";
-CHAR16    gACPIOSFRModelStringVariableName[] = ACPI_OSFR_MODEL_STRING_VARIABLE_NAME;
-CHAR16    gACPIOSFRRefDataBlockVariableName[] = ACPI_OSFR_REF_DATA_BLOCK_VARIABLE_NAME;
-CHAR16    gACPIOSFRMfgStringVariableName[] = ACPI_OSFR_MFG_STRING_VARIABLE_NAME;
 
 EFI_GLOBAL_NVS_AREA_PROTOCOL            mGlobalNvsArea;
 BOOLEAN                   mFirstNotify;
@@ -59,15 +55,6 @@ SYSTEM_CONFIGURATION      mSystemConfig;
 
 UINT8 mSmbusRsvdAddresses[] = PLATFORM_SMBUS_RSVD_ADDRESSES;
 UINT8 mNumberSmbusAddress = sizeof( mSmbusRsvdAddresses ) / sizeof( mSmbusRsvdAddresses[0] );
-
-EFI_ACPI_OSFR_OCUR_OBJECT  mOcurObjectTemplate = {
-  {0xB46F133D, 0x235F, 0x4634, 0x9F, 0x03, 0xB1, 0xC0, 0x1C, 0x54, 0x78, 0x5B},
-  0,
-  0,
-  0,
-  0,
-  0
-};
 
 /**
   Locate the first instance of a protocol.  If the protocol requested is an
@@ -207,14 +194,6 @@ PlatformUpdateTables (
   UINT64                                                      OemIdValue;
   UINT8                                                       Index;
   EFI_ACPI_3_0_FIXED_ACPI_DESCRIPTION_TABLE                   *Facp;
-  EFI_ACPI_OSFR_TABLE                                         *OsfrTable;
-  EFI_ACPI_OSFR_OCUR_OBJECT                                   *pOcurObject;
-  CHAR16                                                      *OcurMfgStringBuffer = NULL;
-  CHAR16                                                      *OcurModelStringBuffer = NULL;
-  UINT8                                                       *OcurRefDataBlockBuffer = NULL;
-  UINTN                                                       OcurMfgStringBufferSize;
-  UINTN                                                       OcurModelStringBufferSize;
-  UINTN                                                       OcurRefDataBlockBufferSize;
 #if defined (IDCC2_SUPPORTED) && IDCC2_SUPPORTED
   EFI_ACPI_ASPT_TABLE                                         *pSpttTable;
 #endif
@@ -465,126 +444,6 @@ PlatformUpdateTables (
       ((EFI_ACPI_MEMORY_MAPPED_CONFIGURATION_BASE_ADDRESS_TABLE *) Table)->Segment[0].EndBusNumber
         = (UINT8)RShiftU64 (mPlatformInfo->PciData.PciExpressSize, 20) - 1;
       break;
-
-
-    case EFI_ACPI_OSFR_TABLE_SIGNATURE:
-      //
-      // Get size of OSFR variable.
-      //
-      OcurMfgStringBufferSize = 0;
-      Status = gRT->GetVariable (
-                      gACPIOSFRMfgStringVariableName,
-                      &gACPIOSFRMfgStringVariableGuid,
-                      NULL,
-                      &OcurMfgStringBufferSize,
-                      NULL
-                      );
-      if (Status != EFI_BUFFER_TOO_SMALL) {
-        //
-        // Variable must not be present on the system.
-        //
-        return EFI_UNSUPPORTED;
-      }
-
-      //
-      // Allocate memory for variable data.
-      //
-      OcurMfgStringBuffer = AllocatePool (OcurMfgStringBufferSize);
-      Status = gRT->GetVariable (
-                      gACPIOSFRMfgStringVariableName,
-                      &gACPIOSFRMfgStringVariableGuid,
-                      NULL,
-                      &OcurMfgStringBufferSize,
-                      OcurMfgStringBuffer
-                      );
-      if (!EFI_ERROR (Status)) {
-        OcurModelStringBufferSize = 0;
-        Status = gRT->GetVariable (
-                        gACPIOSFRModelStringVariableName,
-                        &gACPIOSFRModelStringVariableGuid,
-                        NULL,
-                        &OcurModelStringBufferSize,
-                        NULL
-                        );
-        if (Status != EFI_BUFFER_TOO_SMALL) {
-          //
-          // Variable must not be present on the system.
-          //
-          return EFI_UNSUPPORTED;
-        }
-
-        //
-        // Allocate memory for variable data.
-        //
-        OcurModelStringBuffer = AllocatePool (OcurModelStringBufferSize);
-        Status = gRT->GetVariable (
-                        gACPIOSFRModelStringVariableName,
-                        &gACPIOSFRModelStringVariableGuid,
-                        NULL,
-                        &OcurModelStringBufferSize,
-                        OcurModelStringBuffer
-                        );
-        if (!EFI_ERROR (Status)) {
-          OcurRefDataBlockBufferSize = 0;
-          Status = gRT->GetVariable (
-                          gACPIOSFRRefDataBlockVariableName,
-                          &gACPIOSFRRefDataBlockVariableGuid,
-                          NULL,
-                          &OcurRefDataBlockBufferSize,
-                          NULL
-                          );
-          if (Status == EFI_BUFFER_TOO_SMALL) {
-            //
-            // Allocate memory for variable data.
-            //
-            OcurRefDataBlockBuffer = AllocatePool (OcurRefDataBlockBufferSize);
-            Status = gRT->GetVariable (
-                            gACPIOSFRRefDataBlockVariableName,
-                            &gACPIOSFRRefDataBlockVariableGuid,
-                            NULL,
-                            &OcurRefDataBlockBufferSize,
-                            OcurRefDataBlockBuffer
-                            );
-          }
-          OsfrTable = (EFI_ACPI_OSFR_TABLE *) Table;
-          //
-          // Currently only one object is defined: OCUR_OSFR_TABLE.
-          //
-          OsfrTable->ObjectCount = 1;
-          //
-          // Initialize table length to fixed portion of the ACPI OSFR table.
-          //
-          OsfrTable->Header.Length = sizeof (EFI_ACPI_OSFR_TABLE_FIXED_PORTION);
-          *(UINT32 *)((UINTN) OsfrTable + sizeof (EFI_ACPI_OSFR_TABLE_FIXED_PORTION)) = \
-            (UINT32) (sizeof (EFI_ACPI_OSFR_TABLE_FIXED_PORTION) + sizeof (UINT32));
-          pOcurObject = (EFI_ACPI_OSFR_OCUR_OBJECT *)((UINTN) OsfrTable + sizeof (EFI_ACPI_OSFR_TABLE_FIXED_PORTION) + \
-            sizeof (UINT32));
-          CopyMem (pOcurObject, &mOcurObjectTemplate, sizeof (EFI_ACPI_OSFR_OCUR_OBJECT));
-          pOcurObject->ManufacturerNameStringOffset = (UINT32)((UINTN) pOcurObject - (UINTN) OsfrTable + \
-            sizeof (EFI_ACPI_OSFR_OCUR_OBJECT));
-          pOcurObject->ModelNameStringOffset = (UINT32)((UINTN) pOcurObject - (UINTN) OsfrTable + \
-            sizeof (EFI_ACPI_OSFR_OCUR_OBJECT) + OcurMfgStringBufferSize);
-          if (OcurRefDataBlockBufferSize > 0) {
-            pOcurObject->MicrosoftReferenceOffset = (UINT32)((UINTN) pOcurObject - (UINTN) OsfrTable + \
-              sizeof (EFI_ACPI_OSFR_OCUR_OBJECT) + OcurMfgStringBufferSize + OcurModelStringBufferSize);
-          }
-          CopyMem ((UINTN *)((UINTN) pOcurObject + sizeof (EFI_ACPI_OSFR_OCUR_OBJECT)), OcurMfgStringBuffer, \
-            OcurMfgStringBufferSize);
-          CopyMem ((UINTN *)((UINTN) pOcurObject + sizeof (EFI_ACPI_OSFR_OCUR_OBJECT) + OcurMfgStringBufferSize), \
-            OcurModelStringBuffer, OcurModelStringBufferSize);
-          if (OcurRefDataBlockBufferSize > 0) {
-            CopyMem ((UINTN *)((UINTN) pOcurObject + sizeof (EFI_ACPI_OSFR_OCUR_OBJECT) + OcurMfgStringBufferSize + \
-            OcurModelStringBufferSize),OcurRefDataBlockBuffer, OcurRefDataBlockBufferSize);
-          }
-          OsfrTable->Header.Length += (UINT32)(OcurMfgStringBufferSize + OcurModelStringBufferSize + OcurRefDataBlockBufferSize);
-          OsfrTable->Header.Length += sizeof (EFI_ACPI_OSFR_OCUR_OBJECT) + sizeof (UINT32);
-        }
-      }
-      gBS->FreePool (OcurMfgStringBuffer);
-      gBS->FreePool (OcurModelStringBuffer);
-      gBS->FreePool (OcurRefDataBlockBuffer);
-      break;
-
 
     case EFI_ACPI_WINDOWS_SMM_SECURITY_MITIGATION_TABLE_SIGNATURE:
       WsmtTable = (EFI_ACPI_WSMT_TABLE *) Table;
